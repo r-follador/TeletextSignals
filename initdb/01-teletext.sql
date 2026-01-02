@@ -40,3 +40,12 @@ CREATE INDEX IF NOT EXISTS idx_rag_teletext_teletext_id
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_rag_teletext_source_chunk
     ON emb_teletext_chunk (teletext_id, chunk_id);
+
+CREATE TABLE IF NOT EXISTS emb_teletext_full (
+    id BIGSERIAL PRIMARY KEY,
+    teletext_id TEXT NOT NULL REFERENCES docs_teletext (teletext_id),
+    embedding_mpnet vector(768)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_emb_teletext_full_teletext_id
+    ON emb_teletext_full (teletext_id);
