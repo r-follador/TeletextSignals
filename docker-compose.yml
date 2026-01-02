@@ -1,0 +1,54 @@
+services:
+  db:
+    build: .
+    container_name: teletext-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: my-postgres-password
+      POSTGRES_DB: teletext
+    ports:
+      - "5433:5432"
+    volumes:
+      - teletext_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: teletext-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    volumes:
+      - ollama_data:/root/.ollama
+    # GPU passthrough (native Linux + NVIDIA Container Toolkit)
+    gpus: all
+    command: ["serve"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Optional: automatically pull the model once Ollama is up, then exit
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: teletext-ollama-pull
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    command: ["pull", "gemma3:4b-it-qat"]
+    restart: "no"
+
+volumes:
+  teletext_pgdata:
+  ollama_data:
