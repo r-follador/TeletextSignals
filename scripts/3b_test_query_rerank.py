@@ -15,6 +15,12 @@ embeddings = HuggingFaceEmbeddings(
     encode_kwargs={"normalize_embeddings": True},
 )
 
+cross_encoder = CrossEncoder(
+    "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+    device="cuda",
+)
+
+
 def embed_query(text: str) -> str:
     vec = embeddings.embed_query(f"query: {text}") # # add 'query: ' prefix, see https://huggingface.co/intfloat/multilingual-e5-large
     out_vec = "[" + ", ".join(map(str, vec)) + "]"
@@ -56,7 +62,25 @@ def search_similar(text_query: str, k: int = 5):
     cur.close()
     conn.close()
 
-    return results
+    if not results:
+        return []
+
+    # Rerank the retrieved chunks with a cross-encoder for better precision
+    # Use the full article context (title + content) for reranking.
+    pairs = []
+    for _, _, _, title, content, _ in results:
+        doc_text = "\n\n".join(part for part in (title, content) if part)
+        pairs.append((text_query, doc_text))
+
+    cross_scores = cross_encoder.predict(pairs, batch_size=32)
+
+    reranked = [
+        (teletext_id, chunk_id, chunk, title, content, score, cross_score)
+        for (teletext_id, chunk_id, chunk, title, content, score), cross_score in zip(results, cross_scores)
+    ]
+
+    reranked.sort(key=lambda x: x[6], reverse=True)
+    return reranked
 
 
 # --- Example usage ---
@@ -64,10 +88,10 @@ query = "Corona und Covid"
 rows = search_similar(query, k=10)
 
 for row in rows:
-    teletext_id, chunk_id, chunk, title, content, vector_score = row
+    teletext_id, chunk_id, chunk, title, content, vector_score, cross_score = row
     print(
         f"---Teletext: {teletext_id} | Chunk: {chunk_id} | "
-        f"vector score: {vector_score:.4f}"
+        f"vector score: {vector_score:.4f} | cross score: {cross_score:.4f}"
     )
     print(f"Title: {title}")
     print(f"Content: {content}")

@@ -1,5 +1,11 @@
-import gc
-import json
+"""
+Embed Articles using e5 https://huggingface.co/intfloat/multilingual-e5-large
+- chunked (text splitted to 800 chunks); note: usually the teletext articles are smaller
+- 1024 vector space
+- Uses query/passage prefix. be aware
+==> Used for RAG
+"""
+
 import psycopg2
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -74,7 +80,7 @@ def process_embeddings(rows):
         for chunk_idx, (chunk_text, emb_vec) in enumerate(zip(chunks, chunk_embeddings)):
 
             # Turn embedding into a string representation understood by pgvector
-            emb_1024_str = "[" + ", ".join(f"{x:.6f}" for x in emb_vec) + "]"
+            emb_1024_str = "[" + ", ".join(map(str, emb_vec)) + "]"
 
             cur.execute(
                 """
@@ -85,7 +91,8 @@ def process_embeddings(rows):
                     embedding_em5
                 )
                 VALUES (%s, %s, %s, %s::vector)
-                    ON CONFLICT (teletext_id, chunk_id) DO NOTHING
+                    ON CONFLICT (teletext_id, chunk_id) DO UPDATE
+                    SET embedding_em5 = EXCLUDED.embedding_em5
                 """,
                 (
                     teletext_id,
@@ -110,10 +117,18 @@ try:
         """
         SELECT id, teletext_id, title, content, publication_datetime, rubric, categories, language
         FROM docs_teletext t
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM emb_teletext_chunk r
-            WHERE r.teletext_id = t.teletext_id
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM emb_teletext_chunk r
+                WHERE r.teletext_id = t.teletext_id
+            )
+           OR
+            EXISTS (
+                SELECT 1
+                FROM emb_teletext_chunk r
+                WHERE r.teletext_id = t.teletext_id
+                  AND r.embedding_em5 IS NULL
             );
         """
     )
