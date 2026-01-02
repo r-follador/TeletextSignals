@@ -68,7 +68,8 @@ def process_embeddings(rows):
             continue
 
         print(f"{i}/{len(rows)}: {publication_datetime}: {title} [{teletext_id}]")
-        chunk_embeddings = embeddings_e5.embed_documents(chunks)  # list[list[float]]
+        # add 'passage: ' prefix, see https://huggingface.co/intfloat/multilingual-e5-large
+        chunk_embeddings = embeddings_e5.embed_documents([f"passage: {c}" for c in chunks])        # list[list[float]]
 
         for chunk_idx, (chunk_text, emb_vec) in enumerate(zip(chunks, chunk_embeddings)):
 
