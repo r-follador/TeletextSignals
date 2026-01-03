@@ -35,6 +35,8 @@ def search_similar(text_query: str, k: int = 5):
     )
     cur = conn.cursor()
 
+    cur.execute("SET ivfflat.probes = %s;", (60,)) # probes for ivfflat
+
     sql = """
           SELECT
               r.teletext_id,
@@ -60,7 +62,7 @@ def search_similar(text_query: str, k: int = 5):
 
 
 # --- Example usage ---
-query = "Corona und Covid"
+query = "Wann gab es einen Brand in Trimmis GR?"
 rows = search_similar(query, k=10)
 
 for row in rows:

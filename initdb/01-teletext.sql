@@ -3,6 +3,8 @@
 -- Enable pgvector for similarity search.
 CREATE EXTENSION IF NOT EXISTS vector;
 
+SET maintenance_work_mem = '512MB';   -- more memory required for ivfflat index creation
+
 -------------------------------------------
 CREATE TABLE IF NOT EXISTS docs_teletext (
     id BIGSERIAL PRIMARY KEY,
@@ -30,15 +32,12 @@ CREATE TABLE IF NOT EXISTS emb_teletext_chunk (
     embedding_em5 vector(1024)
 );
 
-CREATE INDEX IF NOT EXISTS idx_rag_teletext_emb1024_cosine
+CREATE INDEX IF NOT EXISTS idx_emb_teletext_chunk_embedding_em5_cosine
     ON emb_teletext_chunk
         USING ivfflat (embedding_em5 vector_cosine_ops)
-    WITH (lists = 100);
+    WITH (lists = 600); --numbers of clusters
 
-CREATE INDEX IF NOT EXISTS idx_rag_teletext_teletext_id
-    ON emb_teletext_chunk (teletext_id);
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_rag_teletext_source_chunk
+CREATE UNIQUE INDEX IF NOT EXISTS idx_emb_teletext_chunk_id
     ON emb_teletext_chunk (teletext_id, chunk_id);
 
 CREATE TABLE IF NOT EXISTS emb_teletext_full (
@@ -49,3 +48,8 @@ CREATE TABLE IF NOT EXISTS emb_teletext_full (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_emb_teletext_full_teletext_id
     ON emb_teletext_full (teletext_id);
+
+CREATE INDEX IF NOT EXISTS idx_emb_teletext_full_embedding_mpnet_cosine
+    ON emb_teletext_full
+        USING ivfflat (embedding_mpnet vector_cosine_ops)
+    WITH (lists = 600); --numbers of clusters

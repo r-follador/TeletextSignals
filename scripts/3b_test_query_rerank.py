@@ -78,13 +78,17 @@ def search_similar(text_query: str, k: int = 5):
         (teletext_id, chunk_id, chunk, title, content, score, cross_score)
         for (teletext_id, chunk_id, chunk, title, content, score), cross_score in zip(results, cross_scores)
     ]
-
     reranked.sort(key=lambda x: x[6], reverse=True)
+    # soft floor after top ten matches
+    reranked = [
+        x for x in reranked[:10]
+        if x[6] > -1.0
+    ]
     return reranked
 
 
 # --- Example usage ---
-query = "Corona und Covid"
+query = "Wann und weshalb starb Pele?"
 rows = search_similar(query, k=10)
 
 for row in rows:
