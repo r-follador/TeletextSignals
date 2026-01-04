@@ -4,9 +4,13 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.14"
 dependencies = [
+    "ipykernel>=7.1.0",
     "langchain>=1.0.8",
     "langchain-huggingface>=1.0.1",
     "langchain-text-splitters>=1.0.0",
+    "matplotlib>=3.10.8",
+    "pandas>=2.3.3",
+    "pandas-stubs~=2.3.3",
     "psycopg2-binary>=2.9.11",
     "psycopg[binary]",
     "requests",

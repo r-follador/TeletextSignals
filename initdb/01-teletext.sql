@@ -15,7 +15,11 @@ CREATE TABLE IF NOT EXISTS docs_teletext (
     rubric TEXT,
     categories TEXT[],
     language TEXT,
-    fetched_at TIMESTAMPTZ DEFAULT NOW()
+    fetched_at TIMESTAMPTZ DEFAULT NOW(),
+    fts tsvector
+        GENERATED ALWAYS AS (
+            to_tsvector('german', coalesce(title,'') || ' ' || coalesce(content,''))
+            ) STORED
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_docs_teletext_teletext_id
@@ -23,6 +27,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_docs_teletext_teletext_id
 
 CREATE INDEX IF NOT EXISTS idx_docs_teletext_pub_datetime
     ON docs_teletext (publication_datetime);
+
+CREATE INDEX IF NOT EXISTS docs_teletext_fts_gin
+    ON docs_teletext
+        USING gin (fts);
 
 CREATE TABLE IF NOT EXISTS emb_teletext_chunk (
     id BIGSERIAL PRIMARY KEY,
