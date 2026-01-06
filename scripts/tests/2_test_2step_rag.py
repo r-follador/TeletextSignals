@@ -1,4 +1,4 @@
-from modules.langchain_rag import make_teletext_rag
+from modules.langchain_2step_rag import make_teletext_rag
 
 rag = make_teletext_rag(
     model="gemma3:4b-it-qat",
