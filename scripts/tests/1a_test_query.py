@@ -1,9 +1,10 @@
-from modules.query_utils import fts_search, vector_similarity_search
+from modules.document_retriever import DocumentRetriever
 
+dr = DocumentRetriever()
 query = "Theater Chur?"
 
 # --- Example usage FTS Search ---
-results = fts_search(query, k=20)
+results = dr.fts_search(query, k=20)
 
 for r in results:
     print(f"--- Teletext: {r['teletext_id']} | Chunk: {r['chunk_id']} | FTS score: {r["fts_score"]} | Vector score: {r["cosine_similarity"]}")
@@ -13,7 +14,7 @@ for r in results:
 
 print("-"*20)
 # --- Example usage Vector similarity Search ---
-results = vector_similarity_search(query, k=20)
+results = dr.vector_similarity_search(query, k=20)
 
 for r in results:
     print(f"--- Teletext: {r['teletext_id']} | Chunk: {r['chunk_id']} | FTS score: {r["fts_score"]} | Vector score: {r["cosine_similarity"]}")

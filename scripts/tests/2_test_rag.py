@@ -1,9 +1,7 @@
 from modules.langchain_rag import make_teletext_rag
-from modules.notebook_helpers import display_cited_sources
 
 rag = make_teletext_rag(
-    model="gemma3:1"
-          "b-it-qat",
+    model="gemma3:4b-it-qat",
     base_url="http://localhost:11434",
     k=40,
     top_k=5,

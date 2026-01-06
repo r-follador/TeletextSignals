@@ -5,7 +5,7 @@ from typing import List
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 import datetime
-from modules.query_utils import SearchResult, search_rerank
+from modules.document_retriever import SearchResult, search_rerank
 
 
 class TeletextHybridRetriever(BaseRetriever):

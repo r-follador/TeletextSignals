@@ -1,9 +1,9 @@
-from IPython.display import display, HTML
+from IPython.display import display, HTML, Markdown
 from typing import Iterable, Optional
 import re
 from typing import Set
 from typing import Iterable, List
-from modules.query_utils import SearchResult
+from modules.document_retriever import SearchResult
 
 def display_search_results(
         rows: Iterable[SearchResult],
@@ -91,7 +91,6 @@ def display_search_results(
 
             <p style="margin-top:8px;font-size:0.8rem;">
                 <strong>Teletext ID</strong><br>{teletext_id}
-                {f"<br><strong>Chunk ID</strong><br>{chunk_id}" if chunk_id is not None else ""}
             </p>
 
             <p style="font-size:0.8rem;">
@@ -102,7 +101,9 @@ def display_search_results(
         display(HTML(html))
 
 def display_answer(answer):
-    display(HTML(f"<div>{answer}</div>"))
+    display(Markdown(
+        f"<div style='background-color: PowderBlue; font-size: 1.1em; padding: 8px;'>\n\n{answer}\n\n</div>"
+    ))
 
 _CIT_RE = re.compile(r"\[([0-9,\s]+)\]")
 

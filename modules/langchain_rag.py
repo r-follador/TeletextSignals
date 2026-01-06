@@ -70,7 +70,6 @@ class TeletextRAG:
         "Answer the question using only the context. "
         "If the context does not contain the answer, say you don't know. "
         "Cite sources like [1], [2] based on the context blocks."
-        "Use following HTML tags for readability <b>, <i>, <br>."
     )
 
     def _build_chain(self):
