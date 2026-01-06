@@ -65,7 +65,8 @@ def vector_similarity_search(text_query: str, k: int = 20, debug: bool = False) 
     emb_str = embed_query(text_query)
 
     if debug:
-        print(emb_str)
+        print(f"Vector search: k={k}, query={text_query!r}")
+        #print(emb_str)
 
     conn = _get_conn()
     cur = conn.cursor()
@@ -112,6 +113,7 @@ def vector_similarity_search(text_query: str, k: int = 20, debug: bool = False) 
 
     finally:
         cur.close()
+        conn.close()
 
 
 def fts_search(
@@ -144,7 +146,7 @@ def fts_search(
           """
 
     if debug:
-        print(f"FTS language={language}, k={k}, query={text_query!r}")
+        print(f"FTS search: language={language}, k={k}, query={text_query!r}")
 
     try:
         cur.execute(sql, (language, text_query, k))
