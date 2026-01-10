@@ -17,4 +17,5 @@ dependencies = [
     "requests",
     "sentence-transformers>=5.1.2",
     "sqlalchemy>=2.0.45",
+    "squarify>=0.4.4",
 ]

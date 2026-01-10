@@ -35,7 +35,7 @@ class TeletextHybridRetriever(BaseRetriever):
             text = r.get("content")
 
             dt = r.get("publication_datetime")
-            dt_str = dt.isoformat()
+            dt_str = dt.date()
 
             docs.append(
                 Document(

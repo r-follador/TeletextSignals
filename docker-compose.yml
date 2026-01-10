@@ -19,7 +19,6 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: teletext-ollama
-    restart: unless-stopped
     ports:
       - "11434:11434"
     environment:
@@ -35,7 +34,7 @@ services:
       timeout: 5s
       retries: 10
 
-  # Optional: automatically pull the model once Ollama is up, then exit
+  # automatically pull the models once Ollama is up, run once only
   ollama-pull:
     image: ollama/ollama:latest
     container_name: teletext-ollama-pull
@@ -46,7 +45,12 @@ services:
       - OLLAMA_HOST=http://ollama:11434
     volumes:
       - ollama_data:/root/.ollama
-    command: ["pull", "gemma3:4b-it-qat"]
+    command:
+      - sh
+      - -c
+      - |
+        ollama pull gemma3:4b-it-qat && \
+        ollama pull qwen2.5:7b-instruct
     restart: "no"
 
 volumes:

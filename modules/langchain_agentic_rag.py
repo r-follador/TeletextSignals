@@ -30,7 +30,7 @@ def _format_docs_for_context(
         teletext_id = md.get("teletext_id") or ""
         text = (d.page_content or "").strip()
 
-        header = f"[{idx}] {title} ({dt}) id={teletext_id}".strip()
+        header = f"[{idx}] {title} (Date: {dt}) id={teletext_id}".strip()
         section = header + "\n" + text
 
         if max_chars is not None and total + len(section) > max_chars:
@@ -87,9 +87,10 @@ class TeletextAgenticRAG:
 
     system_prompt: str = (
         "You are a helpful assistant that can use the teletext_search tool. "
-        "Use the tool when you need facts. Query the tool in german and use short questions."
+        "Use the tool when you need facts from swiss news sources about national and international news."
         "Answer using only retrieved context, cite sources like [1], [2]. "
-        "If the context does not contain the answer, say you don't know. "
+        "If the context does not contain the answer, try a different query."
+        "Structure your answer in chronological fashion using the provided dates. Today is January 2026."
     )
 
     _last_docs: List[Document] = field(default_factory=list, init=False, repr=False)
@@ -108,7 +109,8 @@ class TeletextAgenticRAG:
 
         @tool("teletext_search")
         def teletext_search(query: str) -> str:
-            """Search german news articles and return context blocks with numbered citations."""
+            """Search swiss and international news articles with semantic queries in german language
+            and return context blocks with numbered citations."""
             docs: List[Document] = retriever.invoke(query)
             self._last_docs = docs
             return _format_docs_for_context(docs, self.max_context_chars, start_index=1)
