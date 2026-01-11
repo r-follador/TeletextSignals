@@ -1,6 +1,14 @@
 ![logo.jpg](readme_files/logo.jpg)
 # TeletextSignals - Embeddings & RAG
 
+## TLDR;
+This is proof-of-concept for a local RAG and LLM setup to query your documents. See the final examples [here](C_agentic_rag_example.ipynb) and [here](B_2step_rag_example.ipynb).
+
+Swiss Teletext articles from the last 25 years are used as the example corpus.
+
+Because this runs completely local, none of your data (neither your queries nor your documents) leaves your device,
+so this setup could be used to process confidential information.
+
 ## Intention
 This repo is intended as a **working proof of concept (PoC)** for two things:
 
@@ -114,6 +122,7 @@ See [C_agentic_rag_example.ipynb](C_agentic_rag_example.ipynb) for examples.
 - Hugging Face Transformers
 - Sentence-Transformers
 - LangChain (HuggingFaceEmbeddings wrapper)
+- See [pyproject.toml](pyproject.toml) for all libraries
 
 ### Docker
 
