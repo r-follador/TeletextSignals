@@ -102,7 +102,14 @@ def display_search_results(
 
 def display_answer(answer):
     display(Markdown(
-        f"<div style='background-color: PowderBlue; font-size: 1.1em; padding: 8px;'>\n\n{answer}\n\n</div>"
+        f"""<div style='
+        background: linear-gradient(180deg, #f0f9ff, #e0f2fe);
+        border: 1px solid #bae6fd;
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-size: 1.05em;
+        line-height: 1.55;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);'>\n{answer}\n</div>"""
     ))
 
 _CIT_RE = re.compile(r"\[([0-9,\s]+)\]")
