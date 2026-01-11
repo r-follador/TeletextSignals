@@ -1,3 +1,4 @@
+![logo.jpg](readme_files/logo.jpg)
 # TeletextSignals - Embeddings & RAG
 
 ## Intention
