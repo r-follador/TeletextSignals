@@ -1,7 +1,7 @@
 ![logo.jpg](readme_files/logo.jpg)
 # TeletextSignals - Embeddings & RAG
 
-## TLDR;
+## TL;DR
 This is a proof of concept for a local RAG and LLM setup to query your documents. See the final examples [here](C_agentic_rag_example.ipynb) and [here](B_2step_rag_example.ipynb).
 
 Swiss Teletext articles from the last 25 years are used as the example corpus.

@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.14"
 dependencies = [
+    "bertopic>=0.17.4",
+    "hdbscan>=0.8.41",
     "ipykernel>=7.1.0",
     "langchain>=1.0.8",
     "langchain-huggingface>=1.0.1",
@@ -18,4 +20,6 @@ dependencies = [
     "sentence-transformers>=5.1.2",
     "sqlalchemy>=2.0.45",
     "squarify>=0.4.4",
+    "umap-learn>=0.5.11",
+    "yfinance>=0.2.55",
 ]

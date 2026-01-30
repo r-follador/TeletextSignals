@@ -61,3 +61,20 @@ CREATE INDEX IF NOT EXISTS idx_emb_teletext_full_embedding_mpnet_cosine
     ON emb_teletext_full
         USING ivfflat (embedding_mpnet vector_cosine_ops)
     WITH (lists = 600); --numbers of clusters
+
+-------------------------------------------
+CREATE TABLE IF NOT EXISTS bertopic_topic_info (
+    id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    topic INTEGER NOT NULL,
+    topic_count INTEGER,
+    topic_name TEXT,
+    topic_representation TEXT[],
+    teletext_ids TEXT[]
+);
+
+CREATE INDEX IF NOT EXISTS idx_bertopic_topic_info_topic
+    ON bertopic_topic_info (topic);
+
+CREATE INDEX IF NOT EXISTS idx_bertopic_topic_info_created_at
+    ON bertopic_topic_info (created_at);
