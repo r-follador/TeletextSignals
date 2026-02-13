@@ -494,6 +494,7 @@ def get_top_topic_docs_for_timerange(
     min_probability: float = 0.9,
     random_seed: int = 7,
     limit: Optional[int] = None,
+    top_n_topics: int = 3,
     db_host: str = DB_HOST,
     db_port: str = DB_PORT,
     db_name: str = DB_NAME,
@@ -501,7 +502,7 @@ def get_top_topic_docs_for_timerange(
     db_password: str = DB_PASSWORD,
     table_name: str = TOPIC_INFO_TABLE,
 ) -> List[Dict[str, Any]]:
-    """Return docs for the top topic in a timerange."""
+    """Return docs grouped by the top ranked topics in a timerange."""
     df = find_significant_topics(
         timerange_start=timerange_start,
         timerange_end=timerange_end,
@@ -526,10 +527,10 @@ def get_top_topic_docs_for_timerange(
 
     eligible = df[df["probability"] >= min_probability] if "probability" in df.columns else df
     if eligible.empty:
-        print("No topics passed the probability threshold; using top ranked topic anyway.")
+        print("No topics passed the probability threshold; using top ranked topics anyway.")
         eligible = df
 
-    top_topic = int(eligible.iloc[0]["topic"])
+    top_topics_df = eligible.head(max(int(top_n_topics), 1)).copy()
 
     start_ts = pd.to_datetime(timerange_start)
     end_ts = pd.to_datetime(timerange_end)
@@ -557,30 +558,49 @@ def get_top_topic_docs_for_timerange(
               AND d.publication_datetime <= %(end)s
             ORDER BY d.publication_datetime ASC
         """
-        params = {"topic": top_topic, "start": start_ts, "end": end_ts}
-        if limit is not None and limit > 0:
-            sql += " LIMIT %(limit)s"
-            params["limit"] = limit
-        cur.execute(sql, params)
-        rows = cur.fetchall()
+
+        topic_results: List[Dict[str, Any]] = []
+        for _, topic_row in top_topics_df.iterrows():
+            topic_id = int(topic_row["topic"])
+            params = {"topic": topic_id, "start": start_ts, "end": end_ts}
+            sql_with_limit = sql
+            if limit is not None and limit > 0:
+                sql_with_limit += " LIMIT %(limit)s"
+                params["limit"] = limit
+
+            cur.execute(sql_with_limit, params)
+            rows = cur.fetchall()
+
+            docs: List[Dict[str, Any]] = []
+            for teletext_id, title, content, publication_datetime in rows:
+                docs.append(
+                    {
+                        "teletext_id": teletext_id,
+                        "chunk_id": None,
+                        "chunk_text": None,
+                        "title": title,
+                        "content": content,
+                        "publication_datetime": publication_datetime,
+                        "fts_score": None,
+                        "cosine_similarity": None,
+                        "cross_score": None,
+                    }
+                )
+
+            topic_results.append(
+                {
+                    "topic": topic_id,
+                    "topic_name": topic_row.get("topic_name"),
+                    "topic_representation": topic_row.get("topic_representation"),
+                    "probability": float(topic_row["probability"]) if "probability" in topic_row and pd.notna(topic_row["probability"]) else None,
+                    "rate_ratio": float(topic_row["rate_ratio"]) if "rate_ratio" in topic_row and pd.notna(topic_row["rate_ratio"]) else None,
+                    "count_in_range": int(topic_row["count_in_range"]) if "count_in_range" in topic_row and pd.notna(topic_row["count_in_range"]) else None,
+                    "count_before": int(topic_row["count_before"]) if "count_before" in topic_row and pd.notna(topic_row["count_before"]) else None,
+                    "docs": docs,
+                }
+            )
     finally:
         cur.close()
         conn.close()
 
-    results: List[Dict[str, Any]] = []
-    for teletext_id, title, content, publication_datetime in rows:
-        results.append(
-            {
-                "teletext_id": teletext_id,
-                "chunk_id": None,
-                "chunk_text": None,
-                "title": title,
-                "content": content,
-                "publication_datetime": publication_datetime,
-                "fts_score": None,
-                "cosine_similarity": None,
-                "cross_score": None,
-            }
-        )
-
-    return results
+    return topic_results

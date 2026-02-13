@@ -1,9 +1,13 @@
 from IPython.display import display, HTML, Markdown
-from typing import Iterable, Optional
+from typing import TYPE_CHECKING, Any, Iterable, Optional
 import re
 from typing import Set
-from typing import Iterable, List
-from modules.document_retriever import SearchResult
+from typing import List
+
+if TYPE_CHECKING:
+    from modules.document_retriever import SearchResult
+else:
+    SearchResult = dict[str, Any]
 
 def display_search_results(
         rows: Iterable[SearchResult],
@@ -148,3 +152,48 @@ def display_cited_sources(answer: str, results: list[SearchResult], *, max_conte
     display_search_results(picked, max_content_chars=max_content_chars, citation_labels=labels)
 
 
+def display_topic_timerange_results(
+        topics: Iterable[dict[str, Any]],
+        *,
+        max_content_chars: Optional[int] = 800,
+):
+    """
+    Render grouped topic results from get_top_topic_docs_for_timerange() in a notebook.
+    """
+    topics = list(topics)
+    if not topics:
+        display(HTML("<p><em>No topic documents found for this time range.</em></p>"))
+        return
+
+    for rank, topic in enumerate(topics, start=1):
+        topic_id = topic.get("topic")
+        topic_name = topic.get("topic_name") or "Unnamed topic"
+        topic_representation = topic.get("topic_representation") or ""
+        probability = topic.get("probability")
+        rate_ratio = topic.get("rate_ratio")
+        count_in_range = topic.get("count_in_range")
+        count_before = topic.get("count_before")
+        docs = topic.get("docs") or []
+
+        chips = []
+        if probability is not None:
+            chips.append(f"<span style='background:#ecfeff;color:#155e75;padding:2px 8px;border-radius:999px;font-size:0.75rem;'>P={probability:.3f}</span>")
+        if rate_ratio is not None:
+            chips.append(f"<span style='background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:999px;font-size:0.75rem;'>Rate x{rate_ratio:.2f}</span>")
+        if count_in_range is not None and count_before is not None:
+            chips.append(
+                f"<span style='background:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:999px;font-size:0.75rem;'>Counts {count_in_range}/{count_before}</span>"
+            )
+
+        header_html = f"""
+        <div style="margin:16px 0 8px 0;padding:12px 14px;border:1px solid #dbeafe;border-radius:10px;background:linear-gradient(180deg,#eff6ff,#f8fafc);">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+                <div style="font-weight:700;color:#1e3a8a;">Top {rank}: Topic {topic_id} - {topic_name}</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">{''.join(chips)}</div>
+            </div>
+            <div style="margin-top:6px;color:#334155;font-size:0.82rem;"><strong>Keywords:</strong> {topic_representation}</div>
+            <div style="margin-top:6px;color:#475569;font-size:0.78rem;">{len(docs)} document(s) in selected range</div>
+        </div>
+        """
+        display(HTML(header_html))
+        display_search_results(docs, max_content_chars=max_content_chars)
