@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import re
 from typing import List, Optional
 
 from langchain.agents import create_agent
@@ -15,6 +16,11 @@ from modules.langchain_teletext_retriever import (
 )
 
 
+def _normalize_context_text(text: str) -> str:
+    text = re.sub(r"\\[rnt]", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def _format_docs_for_context(
     docs: List[Document],
     max_chars: int | None,
@@ -25,10 +31,10 @@ def _format_docs_for_context(
 
     for idx, d in enumerate(docs, start=start_index):
         md = d.metadata or {}
-        title = (md.get("title") or "").strip()
+        title = _normalize_context_text(md.get("title") or "")
         dt = md.get("publication_datetime") or ""
         teletext_id = md.get("teletext_id") or ""
-        text = (d.page_content or "").strip()
+        text = _normalize_context_text(d.page_content or "")
 
         header = f"[{idx}] {title} (Date: {dt}) id={teletext_id}".strip()
         section = header + "\n" + text
@@ -90,7 +96,7 @@ class TeletextAgenticRAG:
         "Use the tool when you need facts from swiss news sources about national and international news."
         "Answer using only retrieved context, cite sources like [1], [2]. "
         "If the context does not contain the answer, try a different query."
-        "Structure your answer in chronological fashion using the provided dates. Today is January 2026."
+        "Structure your answer in chronological fashion using the provided dates. Today is March 2026."
     )
 
     _last_docs: List[Document] = field(default_factory=list, init=False, repr=False)
@@ -109,8 +115,9 @@ class TeletextAgenticRAG:
 
         @tool("teletext_search")
         def teletext_search(query: str) -> str:
-            """Search swiss and international news articles with semantic queries in german language
-            and return context blocks with numbered citations."""
+            """Search Swiss and international news articles with semantic queries in german language
+            and return context blocks with numbered citations. Make sure to translate to german.
+            Use semantic query friendly queries."""
             docs: List[Document] = retriever.invoke(query)
             self._last_docs = docs
             return _format_docs_for_context(docs, self.max_context_chars, start_index=1)
@@ -119,6 +126,7 @@ class TeletextAgenticRAG:
             model=self.model,
             base_url=self.base_url,
             temperature=self.temperature,
+            reasoning=self.debug,
         )
 
         return create_agent(
@@ -127,6 +135,32 @@ class TeletextAgenticRAG:
             system_prompt=self.system_prompt,
             debug=self.debug,
         )
+
+    def _extract_reasoning_blocks(self, messages: List[object]) -> List[str]:
+        reasoning_blocks: list[str] = []
+        for msg in messages:
+            if not isinstance(msg, AIMessage):
+                continue
+            reasoning = _content_to_text(
+                msg.additional_kwargs.get("reasoning_content", "")
+            ).strip()
+            if reasoning:
+                reasoning_blocks.append(reasoning)
+        return reasoning_blocks
+
+    def _debug_print_reasoning(self, messages: List[object]) -> None:
+        if not self.debug:
+            return
+
+        reasoning_blocks = self._extract_reasoning_blocks(messages)
+        if not reasoning_blocks:
+            return
+
+        print("\n[debug] Ollama reasoning:")
+        for idx, reasoning in enumerate(reasoning_blocks, start=1):
+            if len(reasoning_blocks) > 1:
+                print(f"\n[debug] step {idx}:")
+            print(reasoning)
 
     def _extract_answer(self, messages: List[object]) -> str:
         for msg in reversed(messages):
@@ -143,6 +177,7 @@ class TeletextAgenticRAG:
         self._last_docs.clear()
         agent = self._build_agent()
         result = agent.invoke({"messages": [{"role": "user", "content": question}]})
+        self._debug_print_reasoning(result["messages"])
         return self._extract_answer(result["messages"])
 
     def ask_with_sources(self, question: str):
@@ -155,6 +190,7 @@ class TeletextAgenticRAG:
         agent = self._build_agent()
         result = agent.invoke({"messages": [{"role": "user", "content": question}]})
 
+        self._debug_print_reasoning(result["messages"])
         answer = self._extract_answer(result["messages"])
         docs = self._last_docs
         sources = documents_to_search_results(docs)

@@ -22,7 +22,7 @@ services:
     ports:
       - "11434:11434"
     environment:
-      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_HOST=0.0.0.0:11434
     volumes:
       - ollama_data:/root/.ollama
     # GPU passthrough (native Linux + NVIDIA Container Toolkit)
@@ -34,10 +34,8 @@ services:
       timeout: 5s
       retries: 10
 
-  # automatically pull the models once Ollama is up, run once only
-  ollama-pull:
+  ollama-pull-gemma:
     image: ollama/ollama:latest
-    container_name: teletext-ollama-pull
     depends_on:
       ollama:
         condition: service_healthy
@@ -45,12 +43,19 @@ services:
       - OLLAMA_HOST=http://ollama:11434
     volumes:
       - ollama_data:/root/.ollama
-    command:
-      - sh
-      - -c
-      - |
-        ollama pull gemma3:4b-it-qat && \
-        ollama pull qwen2.5:7b-instruct
+    command: ["pull", "gemma3:4b-it-qat"]
+    restart: "no"
+
+  ollama-pull-qwen:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    command: ["pull", "qwen3.5:4b"]
     restart: "no"
 
 volumes:
