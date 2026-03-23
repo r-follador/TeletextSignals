@@ -1,4 +1,5 @@
 import datetime
+import math
 
 import psycopg2
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -199,10 +200,13 @@ class DocumentRetriever:
         top_k: int = 10,
         score_floor: float = -0.5,
         batch_size: int = 32,
+        recency_weight: float = 0.0,
+        recency_half_life_days: float = 14.0,
     ) -> List[SearchResult]:
         """
         Cross-encoder rerank using full article context (title + content).
         Expects normalized SearchResult dicts and sets `cross_score`.
+        Optionally applies a small freshness bonus based on publication date.
         """
         if not results:
             return []
@@ -232,9 +236,29 @@ class DocumentRetriever:
             }
             reranked.append(rr)
 
-        # Sort by cross_score desc; treat None as very low.
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        def score_with_recency(result: SearchResult) -> float:
+            cross_score = result["cross_score"]
+            if cross_score is None:
+                return float("-inf")
+
+            if recency_weight <= 0.0 or recency_half_life_days <= 0.0:
+                return cross_score
+
+            publication_datetime = result["publication_datetime"]
+            if publication_datetime.tzinfo is None:
+                publication_datetime = publication_datetime.replace(tzinfo=datetime.timezone.utc)
+            else:
+                publication_datetime = publication_datetime.astimezone(datetime.timezone.utc)
+
+            age_days = max(0.0, (now - publication_datetime).total_seconds() / 86400.0)
+            freshness = math.exp(-math.log(2) * age_days / recency_half_life_days)
+            return cross_score + recency_weight * freshness
+
+        # Sort primarily by cross_score, with an optional freshness bonus.
         reranked.sort(
-            key=lambda x: x["cross_score"] if x["cross_score"] is not None else float("-inf"),
+            key=score_with_recency,
             reverse=True,
         )
 
@@ -258,6 +282,8 @@ class DocumentRetriever:
         top_k: int = 10,
         score_floor: float = -1.0,
         batch_size: int = 32,
+        recency_weight: float = 0.0,
+        recency_half_life_days: float = 14.0,
     ) -> List[SearchResult]:
         results: List[SearchResult] = self.vector_similarity_search(text_query, k=k, debug=debug)
         return self.rerank_results(
@@ -266,6 +292,8 @@ class DocumentRetriever:
             top_k=top_k,
             score_floor=score_floor,
             batch_size=batch_size,
+            recency_weight=recency_weight,
+            recency_half_life_days=recency_half_life_days,
         )
 
     def fts_search_rerank(
@@ -277,6 +305,8 @@ class DocumentRetriever:
         score_floor: float = -1.0,
         batch_size: int = 32,
         language: str = "german",
+        recency_weight: float = 0.0,
+        recency_half_life_days: float = 14.0,
     ) -> List[SearchResult]:
         results: List[SearchResult] = self.fts_search(text_query, k=k, debug=debug, language=language)
         return self.rerank_results(
@@ -285,6 +315,8 @@ class DocumentRetriever:
             top_k=top_k,
             score_floor=score_floor,
             batch_size=batch_size,
+            recency_weight=recency_weight,
+            recency_half_life_days=recency_half_life_days,
         )
 
     def search_rerank(
@@ -295,6 +327,8 @@ class DocumentRetriever:
         top_k: int = 10,
         score_floor: float = -1.0,
         batch_size: int = 32,
+        recency_weight: float = 0.30,
+        recency_half_life_days: float = 7.0,
     ) -> List[SearchResult]:
         """
         Run FTS and vector similarity search, deduplicate by teletext_id,
@@ -348,6 +382,8 @@ class DocumentRetriever:
             top_k=top_k,
             score_floor=score_floor,
             batch_size=batch_size,
+            recency_weight=recency_weight,
+            recency_half_life_days=recency_half_life_days,
         )
 
 
@@ -377,6 +413,8 @@ def rerank_results(
     top_k: int = 10,
     score_floor: float = -0.5,
     batch_size: int = 32,
+    recency_weight: float = 0.0,
+    recency_half_life_days: float = 14.0,
 ) -> List[SearchResult]:
     return _default_retriever.rerank_results(
         text_query=text_query,
@@ -384,6 +422,8 @@ def rerank_results(
         top_k=top_k,
         score_floor=score_floor,
         batch_size=batch_size,
+        recency_weight=recency_weight,
+        recency_half_life_days=recency_half_life_days,
     )
 
 
@@ -394,6 +434,8 @@ def vector_similarity_rerank(
     top_k: int = 10,
     score_floor: float = -1.0,
     batch_size: int = 32,
+    recency_weight: float = 0.0,
+    recency_half_life_days: float = 14.0,
 ) -> List[SearchResult]:
     return _default_retriever.vector_similarity_rerank(
         text_query=text_query,
@@ -402,6 +444,8 @@ def vector_similarity_rerank(
         top_k=top_k,
         score_floor=score_floor,
         batch_size=batch_size,
+        recency_weight=recency_weight,
+        recency_half_life_days=recency_half_life_days,
     )
 
 
@@ -413,6 +457,8 @@ def fts_search_rerank(
     score_floor: float = -1.0,
     batch_size: int = 32,
     language: str = "german",
+    recency_weight: float = 0.0,
+    recency_half_life_days: float = 14.0,
 ) -> List[SearchResult]:
     return _default_retriever.fts_search_rerank(
         text_query=text_query,
@@ -422,6 +468,8 @@ def fts_search_rerank(
         score_floor=score_floor,
         batch_size=batch_size,
         language=language,
+        recency_weight=recency_weight,
+        recency_half_life_days=recency_half_life_days,
     )
 
 
@@ -432,6 +480,8 @@ def search_rerank(
     top_k: int = 10,
     score_floor: float = -1.0,
     batch_size: int = 32,
+    recency_weight: float = 0.15,
+    recency_half_life_days: float = 14.0,
 ) -> List[SearchResult]:
     return _default_retriever.search_rerank(
         text_query=text_query,
@@ -440,4 +490,6 @@ def search_rerank(
         top_k=top_k,
         score_floor=score_floor,
         batch_size=batch_size,
+        recency_weight=recency_weight,
+        recency_half_life_days=recency_half_life_days,
     )

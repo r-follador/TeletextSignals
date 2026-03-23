@@ -82,9 +82,11 @@ This prevents hallucinations and makes the sources tractable.
 
 See [B_2step_rag_example.ipynb](B_2step_rag_example.ipynb) for examples.
 
-- LLM model: [gemma3:4b-it-qat](https://ollama.com/library/gemma3:4b-it-qat) and [qwen3.5:4b](https://ollama.com/library/qwen3.5)
+- LLM model: [gemma3:4b-it-qat](https://ollama.com/library/gemma3:4b-it-qat)
   - Quantization-aware trained 4B model
   - Using ollama
+
+Note: I wasn't successful using [qwen3.5:4b](https://ollama.com/library/qwen3.5), too much thinking time required.
 
 ### Agentic RAG
 ![agentic_rag.svg](readme_files/agentic_rag.svg)
