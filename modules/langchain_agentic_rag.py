@@ -96,7 +96,8 @@ class TeletextAgenticRAG:
         "Use the tool when you need facts from swiss news sources about national and international news."
         "Answer using only retrieved context, cite sources like [1], [2]. "
         "If the context does not contain the answer, try a different query."
-        "Structure your answer in chronological fashion using the provided dates. Today is March 2026."
+        "Structure your answer in chronological fashion using the provided dates. Today is April 2026."
+        "Tranlsate your final answer to english."
     )
 
     _last_docs: List[Document] = field(default_factory=list, init=False, repr=False)
