@@ -1,25 +1,45 @@
 ![logo.jpg](readme_files/logo.jpg)
-# TeletextSignals - Embeddings & RAG
+# TeletextSignals — Local RAG on 25 Years of News
 
 ## TL;DR
-This is a proof of concept for a completely local RAG and LLM setup to query your documents. See the final examples [here](C_agentic_rag_example.ipynb) and [here](B_2step_rag_example.ipynb).
+This repository is a **fully local Retrieval-Augmented Generation (RAG) stack** for querying large document collections—no APIs, no data leaving your machine.
 
-Swiss Teletext articles from the last 25 years are used as the example corpus.
+It uses ~25 years of Swiss Teletext news (~500k articles in german language) as a real-world corpus and demonstrates multiple approaches:
+- high-recall semantic retrieval: hybrid search (vector + full-text)
+- two-step and agentic RAG pipelines
 
-Because this runs completely locally, none of your data (neither your queries nor your documents) leaves your device,
-so this setup could be used to process confidential information.
+See working examples:
+- [Two-step RAG](B_2step_rag_example.ipynb)
+- [Agentic RAG](C_agentic_rag_example.ipynb)
 
-## Intention
-This repo is intended as a **working proof of concept (PoC)** for two things:
+> All processing runs locally. Your documents and queries never leave your device—making this setup viable for sensitive or confidential data.
 
-- a completely local RAG architecture to query a (relatively large) body of text documents on-device
-- some experiments in extracting temporal news signals (*work in progress*)
 
-### Text documents
+## Why this exists
+
+Most RAG examples are either:
+- toy-scale, or
+- dependent on external APIs and hosted vector databases
+
+This project takes a different approach:
+- **fully local execution**
+- **non-trivial corpus size (~500k documents)**
+- **real-world data (news over 25 years)**
+
+
+It is designed as a **working proof of concept** for:
+- building a local RAG pipeline
+- prevent hallucinations by providing verifiable sources
+- using local LLMs to answer questions
+
+
+## The dataset: Teletext as structured signal
+
 Swiss news teletext articles in the German language are used as an underlying source. They are downloaded from [teletext.ch](https://www.teletext.ch/SRF1/100).
 The archive reaches back 25 years and contains >500k entries, see [0_teletext_key_figures.ipynb](0_teletext_key_figures.ipynb) for details.
 
-The advantage is that these are relatively short and on-point summaries of recent events.
+Teletext has a useful property:  
+it compresses events into **short, high-density summaries**—making it an ideal signal source for retrieval and downstream reasoning.
 
 ![img.png](readme_files/img.png)
 
