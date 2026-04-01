@@ -167,3 +167,18 @@ See [docker-compose.yml](docker-compose.yml)
 - `A_retrieval_examples.ipynb`: Semantic vs. full-text retrieval examples and failure modes.
 - `B_2step_rag_example.ipynb`: Two-step RAG pipeline example.
 - `C_agentic_rag_example.ipynb`: Agentic RAG workflow example.
+
+---
+## Experimental notebooks
+### [`E_SMI_events.ipynb`](E_SMI_events.ipynb)
+Experimental notebook that tries to add context to large market moves, using the SMI as an example by linking the strongest weekly gains and drops to news topics that spike in the same time window.
+
+Technically, it computes weekly SMI returns from Yahoo daily price data, selects the largest positive and negative weeks,
+and then queries BERTopic topics built from precomputed `sentence-transformers/paraphrase-multilingual-mpnet-base-v2`
+full-article embeddings. Topic clusters are produced with HDBSCAN, and the notebook surfaces the top topics for each week
+by comparing topic frequency inside the selected week against prior history with a Gamma-Poisson style posterior probability
+filter (`min_probability=0.9`), then shows the matching Teletext articles as qualitative evidence.
+
+This is exploratory only and should be read as timing-based correlation, not causal attribution.
+
+[![img.png](readme_files/E_SMI.png)](E_SMI_events.ipynb)
