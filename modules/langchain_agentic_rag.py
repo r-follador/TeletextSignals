@@ -97,7 +97,6 @@ class TeletextAgenticRAG:
         "Answer using only retrieved context, cite sources like [1], [2]. "
         "If the context does not contain the answer, try a different query."
         "Structure your answer in chronological fashion using the provided dates. Today is April 2026."
-        "Tranlsate your final answer to english."
     )
 
     _last_docs: List[Document] = field(default_factory=list, init=False, repr=False)
@@ -117,7 +116,7 @@ class TeletextAgenticRAG:
         @tool("teletext_search")
         def teletext_search(query: str) -> str:
             """Search Swiss and international news articles with semantic queries in german language
-            and return context blocks with numbered citations. Make sure to translate to german.
+            and return context blocks with numbered citations. Make sure to translate the query to german if necessary.
             Use semantic query friendly queries."""
             docs: List[Document] = retriever.invoke(query)
             self._last_docs = docs

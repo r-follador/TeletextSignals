@@ -43,7 +43,7 @@ services:
       - OLLAMA_HOST=http://ollama:11434
     volumes:
       - ollama_data:/root/.ollama
-    command: ["pull", "gemma3:4b-it-qat"]
+    command: ["pull", "gemma4:e4b"]
     restart: "no"
 
   ollama-pull-qwen:
